@@ -1,5 +1,6 @@
 {
   "name": "nodehttpd",
+  "type": "module",
   "version": "1.0.0",
   "description": "* nodehttpd ** About This is a simple httpd server written in NodeJS for the purposes of learning Javascript language using functional programming principles without any additional libraries. ** How to run 1. Clone the repo. 2. ~cd nodehttpd && npm run run~ 3. Open at [[http://localhost:3000][http://localhost:3000]] with curl or a web browser. ** License MIT License",
   "main": "index.js",

@@ -1,4 +1,10 @@
+/*
+ * nodehttpd
+ * A simple web server written in NodeJS without any 3rd party modules.
+ */
+
 import * as httpd from 'http';
+import { template, container, unorderedList, navbar } from './lib/html.mjs';
 
 // Array to dictionary
 const arrayToDict = (array, data = {}) => {
@@ -14,20 +20,82 @@ const arrayToDict = (array, data = {}) => {
   }
 };
 
-const requestListener = (req, res) => {
-  let headers = arrayToDict(req.rawHeaders);
-  console.log(headers);
-  res.writeHead(200,
-    { "Content-Type": "text/html" });
-  res.write("<h1>Testing!</h1>");
-  res.write("<ul>");
-  res.write(`<li><b>method</b>: ${req.method}</li>`);
-  res.write(`<li><b>host</b>: ${headers.Host}</li>`);
-  res.write(`<li><b>user-agent</b>: ${headers['User-Agent']}</li>`);
-  res.write(`<li><b>url</b>: ${req.url}</li>`);
-  res.write("</ul>");
-  res.end();
+/*
+ * Site config including the pages for navigation.
+ */
+const pageData = {
+  title: "nodehttpd",
+  pages: [
+    { name: "Info", path: "/info" },
+    { name: "About", path: "/about" }
+  ]
 }
 
-const server = httpd.createServer(requestListener);
+/*
+ * The Error page
+ */
+const errorPage = (req, res, status) => {
+  res.writeHead(status);
+  res.end(`<h1>${status}: Something went wrong!</h1>`);
+}
+
+/*
+ * Home page for the server.
+ */
+const root = (req, res) => {
+  let data = {};
+  data['title'] = pageData.title;
+  data['body'] = [
+    container([`<h1 style="text-align: center;color: blue;">${data.title}</h1>`]),
+    ...navbar(pageData)
+  ].join("")
+  res.writeHead(200, { "Content-Type": "text/html" });
+  res.end(template(data));
+}
+
+/*
+ * The info page showing different variables from the request object.
+ */
+const info = (req, res) => {
+  let headers = arrayToDict(req.rawHeaders);
+  let data = {};
+  data['title'] = "Info";
+  data['body'] = [
+    container([`<h1>${data.title}</h1>`]),
+    ...navbar(pageData),
+    container([
+      unorderedList({
+        "method": req.method,
+        ...headers,
+        "url": req.url
+      })
+    ])
+  ].join("");
+  res.writeHead(200, { "Content-Type": "text/html" });
+  res.end(template(data));
+}
+
+/*
+ * The router
+ */
+const requestListener = (req, res) => {
+  return new Promise(resolve => {
+    switch (req.url) {
+      case "/":
+        root(req, res);
+        break;
+      case "/info":
+        info(req, res);
+        break;
+      default:
+        errorPage(req, res, 404);
+        break;
+    }
+  });
+}
+
+const server = httpd.createServer();
+server.on('request', async (req, res) => {
+  await requestListener(req, res);
+});
 server.listen(3000);
